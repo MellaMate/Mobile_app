@@ -76,7 +76,7 @@ class _SignupPageState extends State<SignupPage> {
                     Text(
                       'Create an account',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 24,
                         fontWeight: FontWeight.w700,
                         color: Colors.grey[900],
                       ),
@@ -122,14 +122,14 @@ class _SignupPageState extends State<SignupPage> {
                             text: 'By continuing, you agree to our ',
                             style: TextStyle(
                               color: Colors.grey[700],
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'terms of service',
                                 style: TextStyle(
                                   color: _accentGreen,
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 recognizer: TapGestureRecognizer()
@@ -162,8 +162,9 @@ class _SignupPageState extends State<SignupPage> {
                         child: const Text(
                           'Sign up',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
+                            color: Colors.white
                           ),
                         ),
                       ),
@@ -193,7 +194,7 @@ class _SignupPageState extends State<SignupPage> {
                             'or sign up with',
                             style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -245,6 +246,7 @@ class _SignupPageState extends State<SignupPage> {
                               style: TextStyle(
                                 color: Colors.grey[800],
                                 fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -260,7 +262,7 @@ class _SignupPageState extends State<SignupPage> {
                       children: [
                         Text(
                           'Already have an account?',
-                          style: TextStyle(color: Colors.grey[700]),
+                          style: TextStyle(color: Colors.grey[700],fontSize: 16),
                         ),
                         const SizedBox(width: 6),
                         GestureDetector(
@@ -270,10 +272,11 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                           ),
                           child: Text(
-                            'Sign in here',
+                            'Sign in Here',
                             style: TextStyle(
                               color: _accentGreen,
                               fontWeight: FontWeight.w600,
+                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -303,7 +306,7 @@ class _SignupPageState extends State<SignupPage> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 16,
             color: Colors.grey[700],
             fontWeight: FontWeight.w600,
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mella_mate_app/features/auth/presentation/pages/forgot_password_page.dart';
 
 import 'signup_page.dart';
 
@@ -111,18 +112,20 @@ class _LoginPageState extends State<LoginPage> {
                         Text(
                           'Password',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 16,
                             color: Colors.grey[700],
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            // TODO: forgot password
-                          },
+                            onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+                            );
+                            },
                           child: Text(
                             'Forgot Password?',
-                            style: TextStyle(color: _accentGreen, fontSize: 12),
+                            style: TextStyle(color: _accentGreen, fontSize: 16),
                           ),
                         ),
                       ],
@@ -179,7 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(width: 8),
                         Text(
                           'Keep me signed in',
-                          style: TextStyle(color: Colors.grey[800]),
+                          style: TextStyle(color: Colors.grey[800],fontSize: 16),
                         ),
                       ],
                     ),
@@ -204,6 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.white
                           ),
                         ),
                       ),
@@ -232,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                             'or sign in with',
                             style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -300,6 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           color: _accentGreen,
                           fontWeight: FontWeight.w600,
+                          fontSize: 16
                         ),
                       ),
                     ),
@@ -320,7 +325,7 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 16,
             color: Colors.grey[700],
             fontWeight: FontWeight.w600,
           ),
