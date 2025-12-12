@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mella_mate_app/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:mella_mate_app/features/dashboard/presentation/pages/dashboard_page.dart';
 
 import 'signup_page.dart';
 
@@ -192,9 +193,9 @@ class _LoginPageState extends State<LoginPage> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: perform login
-                        },
+                        onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DashboardPage()),
+                      ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _accentGreen,
                           shape: RoundedRectangleBorder(
