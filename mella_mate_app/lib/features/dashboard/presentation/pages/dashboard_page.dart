@@ -6,7 +6,7 @@ import 'package:mella_mate_app/features/send/presentation/pages/send_page.dart';
 
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();

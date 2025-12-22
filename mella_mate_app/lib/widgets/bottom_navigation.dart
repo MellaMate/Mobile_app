@@ -4,8 +4,7 @@ class BottomNavigationCustom extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
-  const BottomNavigationCustom({Key? key, this.currentIndex = 0, this.onTap})
-    : super(key: key);
+  const BottomNavigationCustom({super.key, this.currentIndex = 0, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -80,14 +79,14 @@ class _NavItem extends StatelessWidget {
   final ValueChanged<int>? onTap;
 
   const _NavItem({
-    Key? key,
+    super.key,
     required this.index,
     required this.active,
     required this.icon,
     required this.label,
     required this.accent,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

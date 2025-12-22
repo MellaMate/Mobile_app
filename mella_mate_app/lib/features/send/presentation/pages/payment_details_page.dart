@@ -8,11 +8,11 @@ class PaymentDetailsPage extends StatelessWidget {
   final String amount;
 
   const PaymentDetailsPage({
-    Key? key,
+    super.key,
     required this.currency,
     required this.address,
     required this.amount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

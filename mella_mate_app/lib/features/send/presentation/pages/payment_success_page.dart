@@ -4,7 +4,7 @@ import 'package:mella_mate_app/widgets/bottom_navigation.dart';
 class PaymentSuccessPage extends StatelessWidget {
   final String total;
 
-  const PaymentSuccessPage({Key? key, required this.total}) : super(key: key);
+  const PaymentSuccessPage({super.key, required this.total});
 
   @override
   Widget build(BuildContext context) {

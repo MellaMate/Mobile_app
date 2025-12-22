@@ -12,6 +12,10 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   int _currentIndex = 3; // History tab index
+  String _searchQuery = '';
+  String _filterStatus = 'All'; // All, Income, Expense
+  int _currentPage = 0;
+  final int _itemsPerPage = 10;
 
   // Mock data matching the design
   final List<Map<String, dynamic>> _transactions = [
@@ -35,6 +39,36 @@ class _HistoryPageState extends State<HistoryPage> {
     {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '-1200.00 USD', 'status': 'completed'},
   ];
 
+  List<Map<String, dynamic>> get _filteredTransactions {
+    return _transactions.where((item) {
+      final matchesSearch = item['name'].toLowerCase().contains(_searchQuery.toLowerCase());
+      
+      final matchesFilter = _filterStatus == 'All' || 
+          (_filterStatus == 'Income' && item['type'] == 'income') ||
+          (_filterStatus == 'Expense' && item['type'] == 'expense');
+
+      return matchesSearch && matchesFilter;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _paginatedTransactions {
+    final filtered = _filteredTransactions;
+    final startIndex = _currentPage * _itemsPerPage;
+    if (startIndex >= filtered.length) return [];
+    
+    final endIndex = (startIndex + _itemsPerPage < filtered.length) 
+        ? startIndex + _itemsPerPage 
+        : filtered.length;
+    
+    return filtered.sublist(startIndex, endIndex);
+  }
+
+  int get _totalPages {
+    final filtered = _filteredTransactions;
+    if (filtered.isEmpty) return 0;
+    return (filtered.length / _itemsPerPage).ceil();
+  }
+
   void _onBottomNavTap(int index) {
     if (index == _currentIndex) return;
 
@@ -51,6 +85,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final paginatedItems = _paginatedTransactions;
+    final totalPages = _totalPages;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -89,6 +126,12 @@ class _HistoryPageState extends State<HistoryPage> {
                       children: [
                         Expanded(
                           child: TextField(
+                            onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                  _currentPage = 0; // Reset pagination on search
+                                });
+                            },
                             decoration: InputDecoration(
                               hintText: 'Search for anything...',
                               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
@@ -112,21 +155,34 @@ class _HistoryPageState extends State<HistoryPage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.grey.shade300),
-                            boxShadow: [
-                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                        PopupMenuButton<String>(
+                          onSelected: (value) {
+                            setState(() {
+                              _filterStatus = value;
+                              _currentPage = 0;
+                            });
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'All', child: Text('All')),
+                            const PopupMenuItem(value: 'Income', child: Text('Income')),
+                            const PopupMenuItem(value: 'Expense', child: Text('Expense')),
+                          ],
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _filterStatus != 'All' ? const Color(0xFF0FA71A).withOpacity(0.1) : Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: _filterStatus != 'All' ? const Color(0xFF0FA71A) : Colors.grey.shade300),
+                              boxShadow: [
+                                 BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(Icons.filter_list, color: const Color(0xFF0FA71A), size: 20),
                           ),
-                          child: const Icon(Icons.filter_list, color: Color(0xFF0FA71A), size: 20),
                         ),
                       ],
                     ),
@@ -146,10 +202,10 @@ class _HistoryPageState extends State<HistoryPage> {
                     // List
                     Expanded(
                       child: ListView.separated(
-                        itemCount: _transactions.length,
+                        itemCount: paginatedItems.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final item = _transactions[index];
+                          final item = paginatedItems[index];
                           final isIncome = item['type'] == 'income';
                           final status = item['status'];
                           
@@ -239,30 +295,40 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     const SizedBox(height: 16),
                     // Pagination
+                    if (totalPages > 1) 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.arrow_back_ios, size: 14, color: Colors.grey),
-                          label: const Text('Previous', style: TextStyle(color: Colors.black87)),
+                          onPressed: _currentPage > 0 ? () {
+                            setState(() {
+                              _currentPage--;
+                            });
+                          } : null,
+                          icon: Icon(Icons.arrow_back_ios, size: 14, color: _currentPage > 0 ? Colors.grey : Colors.grey.shade300),
+                          label: Text('Previous', style: TextStyle(color: _currentPage > 0 ? Colors.black87 : Colors.grey.shade400)),
                         ),
+                        // Dynamic dots
                         Row(
-                          children: [
-                            _dot(true),
-                            _dot(false),
-                            _dot(false),
-                          ],
+                          children: List.generate(totalPages > 5 ? 5 : totalPages, (index) {
+                             // Simplified logic: just 0..4 or 0..totalPages
+                             // If many pages, this logic is naive but sufficient for mock.
+                             return _dot(index == _currentPage);
+                          }),
                         ),
                          TextButton.icon(
-                          onPressed: () {},
+                          onPressed: _currentPage < totalPages - 1 ? () {
+                             setState(() {
+                               _currentPage++;
+                             });
+                          } : null,
                            // reverse icon for next
                           icon: const SizedBox(), 
                           label: Row(
-                            children: const [
-                              Text('Next', style: TextStyle(color: Colors.black87)),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87), // Green maybe? Design uses black
+                            children: [
+                              Text('Next', style: TextStyle(color: _currentPage < totalPages - 1 ? Colors.black87 : Colors.grey.shade400)),
+                              const SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_ios, size: 14, color: _currentPage < totalPages - 1 ? Colors.black87 : Colors.grey.shade300), 
                             ],
                           ),
                         ),
