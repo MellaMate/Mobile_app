@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mella_mate_app/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:mella_mate_app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:provider/provider.dart';
+import 'package:mella_mate_app/providers/auth_provider.dart';
 
 import 'signup_page.dart';
 
@@ -28,25 +30,36 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      // Mock Login Success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Login Successful!'),
-          backgroundColor: _accentGreen,
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
-      // Navigate to Dashboard
-      Future.delayed(const Duration(seconds: 1), () {
-         if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardPage()),
-            );
-         }
-      });
+      final success = await authProvider.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (success) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Login Successful!'),
+            backgroundColor: _accentGreen,
+          ),
+        );
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'Login failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -261,13 +274,24 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white
-                            ),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, auth, child) {
+                              if (auth.isLoading) {
+                                return const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                );
+                              }
+                              return const Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),

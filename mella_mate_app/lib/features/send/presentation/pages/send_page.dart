@@ -12,7 +12,7 @@ class SendPage extends StatefulWidget {
 }
 
 class _SendPageState extends State<SendPage> {
-  final _currencyController = TextEditingController(text: 'Stella Lumens');
+  final _currencyController = TextEditingController(text: 'USDC');
   final _addressController = TextEditingController();
   final _amountController = TextEditingController(text: '100.00');
   final _formKey = GlobalKey<FormState>();

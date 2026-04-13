@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mella_mate_app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:provider/provider.dart';
+import 'package:mella_mate_app/providers/auth_provider.dart';
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
@@ -27,26 +29,33 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
-  void _signup() {
+  Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
-      // Mock Signup Success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Account Created Successfully!'),
-          backgroundColor: _accentGreen,
-          duration: const Duration(seconds: 1),
-        ),
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      final success = await authProvider.signup(
+        username: _nameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
       );
 
-      // Navigate to Dashboard
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const DashboardPage()),
-            (route) => false, // Remove all previous routes
-          );
-        }
-      });
+      if (success) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Account Created Successfully! Please login.'),
+            backgroundColor: _accentGreen,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'Signup failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -193,13 +202,24 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Sign up',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white
-                            ),
+                          child: Consumer<AuthProvider>(
+                            builder: (context, auth, child) {
+                              if (auth.isLoading) {
+                                return const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                );
+                              }
+                              return const Text(
+                                'Sign up',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),

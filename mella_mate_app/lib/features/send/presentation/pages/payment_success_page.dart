@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:mella_mate_app/widgets/bottom_navigation.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:mella_mate_app/providers/auth_provider.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
   final String total;
@@ -102,19 +104,27 @@ class PaymentSuccessPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 36),
 
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            childAspectRatio: 2.5,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            children: [
-                              _infoCard('Ref Number', '000085752257'),
-                              _infoCard('Payment Time', '25 Feb 2023, 13:22'),
-                              _infoCard('Payment Method', 'Bank Transfer'),
-                              _infoCard('Sender Name', 'Antonio Roberto'),
-                            ],
+                          Consumer<AuthProvider>(
+                            builder: (context, auth, _) {
+                              final userName = auth.user?.username ?? 'User';
+                              final now = DateTime.now();
+                              final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(now);
+                              
+                              return GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                childAspectRatio: 2.5,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                children: [
+                                  _infoCard('Ref Number', 'TX-${now.millisecondsSinceEpoch.toString().substring(7)}'),
+                                  _infoCard('Payment Time', formattedDate),
+                                  _infoCard('Payment Method', 'Stellar Network'),
+                                  _infoCard('Sender Name', userName),
+                                ],
+                              );
+                            },
                           ),
 
                           // Removed zigzag effect as per request

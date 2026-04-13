@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import '../../../../widgets/bottom_navigation.dart';
-import '../../../../features/send/presentation/pages/send_page.dart';
-import '../../../../features/recieve/presentation/pages/recieve_page.dart';
+import '../../../../features/send/presentation/pages/recieve_page.dart';
+import 'package:provider/provider.dart';
+import 'package:mella_mate_app/features/send/data/repository/send_repository_impl.dart';
+import 'package:mella_mate_app/features/send/data/model/transaction_model.dart';
+import 'package:intl/intl.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -11,47 +12,52 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  int _currentIndex = 3; // History tab index
+  int _currentIndex = 3;
   String _searchQuery = '';
-  String _filterStatus = 'All'; // All, Income, Expense
+  String _filterStatus = 'All';
   int _currentPage = 0;
   final int _itemsPerPage = 10;
+  
+  List<Transaction> _transactions = [];
+  bool _isLoading = false;
 
-  // Mock data matching the design
-  final List<Map<String, dynamic>> _transactions = [
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'pending'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'pending'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'completed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'expense', 'amount': '-1200.00 USD', 'status': 'failed'},
-    {'date': '21/10/25', 'name': 'Adam Smith', 'type': 'income', 'amount': '-1200.00 USD', 'status': 'completed'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
 
-  List<Map<String, dynamic>> get _filteredTransactions {
+  Future<void> _loadHistory() async {
+    setState(() => _isLoading = true);
+    try {
+      final history = await context.read<SendRepository>().getHistory();
+      if (mounted) {
+        setState(() {
+          _transactions = history;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  List<Transaction> get _filteredTransactions {
     return _transactions.where((item) {
-      final matchesSearch = item['name'].toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesSearch = item.counterparty.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+                          item.hash.toLowerCase().contains(_searchQuery.toLowerCase());
       
       final matchesFilter = _filterStatus == 'All' || 
-          (_filterStatus == 'Income' && item['type'] == 'income') ||
-          (_filterStatus == 'Expense' && item['type'] == 'expense');
+          (_filterStatus == 'Income' && item.direction == 'IN') ||
+          (_filterStatus == 'Expense' && item.direction == 'OUT');
 
       return matchesSearch && matchesFilter;
     }).toList();
   }
 
-  List<Map<String, dynamic>> get _paginatedTransactions {
+  List<Transaction> get _paginatedTransactions {
     final filtered = _filteredTransactions;
     final startIndex = _currentPage * _itemsPerPage;
     if (startIndex >= filtered.length) return [];
@@ -199,99 +205,97 @@ class _HistoryPageState extends State<HistoryPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     // List
                     Expanded(
-                      child: ListView.separated(
-                        itemCount: paginatedItems.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final item = paginatedItems[index];
-                          final isIncome = item['type'] == 'income';
-                          final status = item['status'];
-                          
-                          Color statusColor;
-                          IconData statusIcon;
-                          if (status == 'completed') {
-                            statusColor = const Color(0xFF0FA71A);
-                            statusIcon = Icons.check_circle_outline;
-                          } else if (status == 'pending') {
-                            statusColor = Colors.orange;
-                            statusIcon = Icons.access_time; // Using generic warning/pending icon look
-                          } else {
-                            statusColor = Colors.red;
-                            statusIcon = Icons.cancel_outlined;
-                          }
+                      child: _isLoading 
+                        ? const Center(child: CircularProgressIndicator())
+                        : paginatedItems.isEmpty
+                          ? const Center(child: Text('No transactions found'))
+                          : ListView.separated(
+                              itemCount: paginatedItems.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final item = paginatedItems[index];
+                                final isIncome = item.direction == 'IN';
+                                final status = item.status;
+                                
+                                Color statusColor;
+                                IconData statusIcon;
+                                if (status == 'completed') {
+                                  statusColor = const Color(0xFF0FA71A);
+                                  statusIcon = Icons.check_circle_outline;
+                                } else if (status == 'pending') {
+                                  statusColor = Colors.orange;
+                                  statusIcon = Icons.wb_sunny_outlined;
+                                } else {
+                                  statusColor = Colors.red;
+                                  statusIcon = Icons.cancel_outlined;
+                                }
 
-                          // Override for the sun icon in design (pending?)
-                          if (status == 'pending') {
-                             statusIcon = Icons.wb_sunny_outlined; // Trying to match design's sun/spinner
-                          }
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white, // No borders/shadows in list per design, clean rows?
-                              // Actually design has alternate stripes looks like just white rows.
-                              // Let's keep it simple.
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    item['date'],
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    item['name'],
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Center(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: isIncome ? const Color(0xFF0FA71A).withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                                        shape: BoxShape.circle,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          DateFormat('dd/MM/yy').format(item.createdAt),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                        ),
                                       ),
-                                      child: Icon(
-                                        isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-                                        size: 14,
-                                        color: isIncome ? const Color(0xFF0FA71A) : Colors.red,
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          item.counterparty.length > 10 ? '${item.counterparty.substring(0, 5)}...${item.counterparty.substring(item.counterparty.length-4)}' : item.counterparty,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                        ),
                                       ),
-                                    ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Center(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: isIncome ? const Color(0xFF0FA71A).withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                                              size: 14,
+                                              color: isIncome ? const Color(0xFF0FA71A) : Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          "${isIncome ? '' : '-'}${item.amount.toStringAsFixed(2)} ${item.currency}",
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Icon(
+                                            statusIcon,
+                                            color: statusColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    item['amount'],
-                                    textAlign: TextAlign.right,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Icon(
-                                      statusIcon,
-                                      color: statusColor,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ),
                     const SizedBox(height: 16),
                     // Pagination

@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:mella_mate_app/features/history/presentation/pages/history_page.dart';
-import 'package:mella_mate_app/features/recieve/presentation/pages/recieve_page.dart';
-import 'package:mella_mate_app/widgets/bottom_navigation.dart';
 import 'package:mella_mate_app/features/send/presentation/pages/send_page.dart';
+import 'package:provider/provider.dart';
+import 'package:mella_mate_app/providers/auth_provider.dart';
+import 'package:mella_mate_app/providers/wallet_provider.dart';
+import 'package:mella_mate_app/features/send/data/repository/send_repository_impl.dart';
+import 'package:mella_mate_app/features/send/data/model/transaction_model.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 
 class DashboardPage extends StatefulWidget {
@@ -14,6 +17,39 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0;
+  List<Transaction> _history = [];
+  bool _isLoadingHistory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WalletProvider>().loadWalletData();
+      _loadHistory();
+    });
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final history = await context.read<SendRepository>().getHistory();
+      if (mounted) {
+        setState(() {
+          _history = history.take(5).toList(); // Show only last 5 on dashboard
+          _isLoadingHistory = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingHistory = false);
+      }
+    }
+  }
+
+  String _truncateAddress(String address) {
+    if (address.length <= 10) return address;
+    return '${address.substring(0, 5)}...${address.substring(address.length - 4)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +76,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Row(
                           children: [
-                            CircleAvatar(
-                              radius: 26, // Slightly larger avatar
+                            const CircleAvatar(
+                              radius: 26,
                               backgroundImage: AssetImage(
                                 'assets/images/profile.jpeg',
                               ),
@@ -52,12 +88,14 @@ class _DashboardPageState extends State<DashboardPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Text(
-                                      'Welcome Back, Gustavo',
-                                      style: TextStyle(
-                                        fontSize: 22, // 16 -> 18
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green,
+                                    Consumer<AuthProvider>(
+                                      builder: (context, auth, _) => Text(
+                                        'Welcome, ${auth.user?.username ?? 'User'}',
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 4),
@@ -69,9 +107,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  "Here's what's happening with your store today.",
+                                  "Your decentralized wallet is ready.",
                                   style: TextStyle(
-                                    fontSize: 14, // 12 -> 13
+                                    fontSize: 14,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -118,27 +156,35 @@ class _DashboardPageState extends State<DashboardPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r"$240,399",
-                                    style: TextStyle(
-                                      fontSize: 32, // 28 -> 32
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Total Amount',
-                                    style: TextStyle(
-                                      fontSize: 14, // 12 -> 14
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                              Consumer<WalletProvider>(
+                                builder: (context, walletProv, _) {
+                                  if (walletProv.isLoading) {
+                                    return const Text('Loading...', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold));
+                                  }
+                                  final amount = walletProv.usdcBalance?.amount ?? "0.0";
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "\$ $amount",
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Wallet Balance (USDC)',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -232,23 +278,36 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                                 ],
                               ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'G43...J8F',
-                                    style: TextStyle(
-                                      fontSize: 14, // 12 -> 14
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.copy_outlined,
-                                    size: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ],
+                              Consumer<WalletProvider>(
+                                builder: (context, walletProv, _) {
+                                  final address = walletProv.wallet?.publicKey ?? 'Not available';
+                                  return Row(
+                                    children: [
+                                      Text(
+                                        _truncateAddress(address),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Clipboard.setData(ClipboardData(text: address));
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Address copied to clipboard'), duration: Duration(seconds: 1)),
+                                          );
+                                        },
+                                        child: const Icon(
+                                          Icons.copy_outlined,
+                                          size: 16,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -336,106 +395,107 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
 
-                    ListView.separated(
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: 8,
-                      itemBuilder: (context, index) {
-                        // Mock data generation
-                        bool isIncome = index % 2 != 0;
-                        int statusType =
-                            index % 3; // 0 success, 1 pending, 2 failed
+                    if (_isLoadingHistory)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_history.isEmpty)
+                      const Center(child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Text("No transactions yet."),
+                      ))
+                    else
+                      ListView.separated(
+                        separatorBuilder: (_, __) => const SizedBox(height: 14),
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: _history.length,
+                        itemBuilder: (context, index) {
+                          final tx = _history[index];
+                          final isIncome = tx.direction == 'IN';
+                          final statusColor = tx.status == 'completed' ? Colors.green : (tx.status == 'pending' ? Colors.orange : Colors.red);
 
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 8,
-                          ),
-                          decoration: BoxDecoration(color: Colors.white),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  "21/10/25",
-                                  style: TextStyle(
-                                    fontSize: 14, // 11 -> 13
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  "Adam Smith",
-                                  style: TextStyle(
-                                    fontSize: 14, // 11 -> 13
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Center(
-                                  child: Container(
-                                    padding: EdgeInsets.all(
-                                      6,
-                                    ), // Larger padding
-                                    decoration: BoxDecoration(
-                                      color: isIncome
-                                          ? Colors.green.withOpacity(0.1)
-                                          : Colors.red.withOpacity(0.1),
-                                      shape: BoxShape.circle,
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 8,
+                            ),
+                            decoration: const BoxDecoration(color: Colors.white),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    DateFormat('dd/MM/yy').format(tx.createdAt),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    tx.counterparty.length > 10 ? _truncateAddress(tx.counterparty) : tx.counterparty,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: isIncome
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.red.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        isIncome
+                                            ? Icons.arrow_downward
+                                            : Icons.arrow_upward,
+                                        size: 12,
+                                        color: isIncome
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    "${isIncome ? '' : '-'}${tx.amount.toStringAsFixed(2)} ${tx.currency}",
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
                                     child: Icon(
-                                      isIncome
-                                          ? Icons.arrow_downward
-                                          : Icons.arrow_upward,
-                                      size: 14, // 10 -> 12
-                                      color: isIncome
-                                          ? Colors.green
-                                          : Colors.red,
+                                      tx.status == 'completed'
+                                          ? Icons.check_circle_outline
+                                          : (tx.status == 'pending'
+                                                ? Icons.wb_sunny_outlined
+                                                : Icons.highlight_off),
+                                      size: 18,
+                                      color: statusColor,
                                     ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  isIncome ? "1200.00 USD" : "-1200.00 USD",
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    fontSize: 14, // 11 -> 13
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Icon(
-                                    statusType == 0
-                                        ? Icons.check_circle_outline
-                                        : (statusType == 1
-                                              ? Icons.wb_sunny_outlined
-                                              : Icons.highlight_off),
-                                    size: 18, // 16 -> 18
-                                    color: statusType == 0
-                                        ? Colors.green
-                                        : (statusType == 1
-                                              ? Colors.orange
-                                              : Colors.red),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     const SizedBox(height: 60),
                   ],
                 ),
