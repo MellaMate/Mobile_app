@@ -1,3 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mella_mate_app/features/send/presentation/pages/send_page.dart';
+import 'package:mella_mate_app/widgets/bottom_navigation.dart';
+
 import '../../../../features/history/presentation/pages/history_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mella_mate_app/providers/auth_provider.dart';

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:mella_mate_app/widgets/bottom_navigation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
