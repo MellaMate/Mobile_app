@@ -3,6 +3,7 @@ import 'package:mella_mate_app/features/auth/presentation/pages/forgot_password_
 import 'package:mella_mate_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mella_mate_app/providers/auth_provider.dart';
+import 'package:mella_mate_app/core/widgets/app_modal.dart';
 
 import 'signup_page.dart';
 
@@ -31,35 +32,40 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      final success = await authProvider.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      if (success) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Login Successful!'),
-            backgroundColor: _accentGreen,
-          ),
-        );
-        
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Login failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    final success = await authProvider.login(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (success) {
+      if (!mounted) return;
+      AppModal.showMessage(
+        context: context,
+        title: 'Welcome back!',
+        message: 'Login successful. Let\'s continue.',
+        icon: Icons.check_circle,
+        iconColor: _accentGreen,
+        actionText: 'Continue',
+        barrierDismissible: false,
+        onAction: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
+          );
+        },
+      );
+    } else {
+      if (!mounted) return;
+      AppModal.showMessage(
+        context: context,
+        title: 'Login failed',
+        message: authProvider.error ?? 'Login failed',
+        icon: Icons.error_outline,
+        iconColor: Colors.red,
+        actionText: 'Try again',
+      );
     }
   }
 
@@ -92,15 +98,10 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'MELLAMATE.',
-                        style: TextStyle(
-                          color: _accentGreen,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.8,
-                          fontSize: 20,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.jpg',
+                        height: 64,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 18),
                       Text(
@@ -119,17 +120,8 @@ class _LoginPageState extends State<LoginPage> {
                         child: TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
                           decoration: InputDecoration(
-                            hintText: 'johndoe@gmail.com',
+                            hintText: 'abebekebede@gmail.com',
                             filled: true,
                             fillColor: const Color(0xFFF8F9FA),
                             contentPadding: const EdgeInsets.symmetric(
@@ -191,15 +183,6 @@ class _LoginPageState extends State<LoginPage> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscure,
-                        validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
                         decoration: InputDecoration(
                           hintText: '••••••••••••',
                           filled: true,
@@ -297,91 +280,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     const SizedBox(height: 18),
 
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xFFE6E6E6),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6F7),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'or sign in with',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        const Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xFFE6E6E6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                  SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Sign-In is not implemented yet.')),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF0F0F0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.white,
-                              child: Text(
-                                'G',
-                                style: TextStyle(
-                                  color: Colors.red[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 8),
 
                     GestureDetector(
-                      onTap: () => Navigator.of(context).push(
+                      onTap: () => Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (_) => const SignupPage()),
                       ),
                       child: Text(

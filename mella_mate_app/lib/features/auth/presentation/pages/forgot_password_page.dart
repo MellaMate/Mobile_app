@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mella_mate_app/core/validators.dart';
+import 'package:mella_mate_app/core/widgets/app_modal.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -21,21 +23,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _resetPassword() {
     if (_formKey.currentState!.validate()) {
-       // Mock Reset Success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Password reset link sent to your email!'),
-          backgroundColor: _accentGreen,
-          duration: const Duration(seconds: 2),
-        ),
+      AppModal.showMessage(
+        context: context,
+        title: 'Check your email',
+        message: 'Password reset link sent to your email.',
+        icon: Icons.check_circle,
+        iconColor: _accentGreen,
+        actionText: 'Back to login',
+        barrierDismissible: false,
+        onAction: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        },
       );
-      
-       // Return to Login after delay
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-           Navigator.of(context).pop();
-        }
-      });
     }
   }
 
@@ -68,15 +68,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'MELLAMATE.',
-                        style: TextStyle(
-                          color: _accentGreen,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.8,
-                          fontSize: 20,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.jpg',
+                        height: 64,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 18),
                       Text(
@@ -107,15 +102,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         child: TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
+                          validator: AppValidators.validateEmail,
                           decoration: InputDecoration(
                             hintText: 'johndoe@gmail.com',
                             filled: true,

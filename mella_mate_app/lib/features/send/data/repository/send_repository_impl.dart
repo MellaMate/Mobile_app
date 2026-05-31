@@ -30,7 +30,12 @@ class SendRepositoryImpl implements SendRepository {
   @override
   Future<List<Transaction>> getHistory() async {
     final response = await _apiClient.get(AppConstants.history);
-    final List<dynamic> historyJson = response['transactions'] ?? [];
+    List<dynamic> historyJson = [];
+    if (response is List) {
+      historyJson = response;
+    } else if (response is Map && response.containsKey('transactions')) {
+      historyJson = response['transactions'];
+    }
     return historyJson.map((json) => Transaction.fromJson(json)).toList();
   }
 

@@ -29,9 +29,12 @@ class AuthRemoteDataSource {
     required String password,
     String role = 'user',
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedName = username.trim();
     final body = {
-      'username': username,
-      'email': email,
+      'username': normalizedEmail,
+      'full_name': normalizedName,
+      'email': normalizedEmail,
       'password': password,
       'role': role,
     };

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mella_mate_app/features/send/presentation/pages/send_page.dart';
 import 'package:mella_mate_app/widgets/bottom_navigation.dart';
+import 'package:mella_mate_app/core/widgets/app_modal.dart';
 
 import '../../../../features/history/presentation/pages/history_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mella_mate_app/providers/auth_provider.dart';
 import 'package:mella_mate_app/providers/wallet_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class RecievePage extends StatefulWidget {
   const RecievePage({super.key});
@@ -36,8 +38,19 @@ class _RecievePageState extends State<RecievePage> {
 
   @override
   Widget build(BuildContext context) {
+    final walletProv = context.watch<WalletProvider>();
+    final address = walletProv.wallet?.publicKey ?? 'Not available';
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -81,11 +94,18 @@ class _RecievePageState extends State<RecievePage> {
                           ),
                         ],
                       ),
-                      child: Image.asset(
-                        'assets/images/qr_code.png',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.contain,
+                      child: QrImageView(
+                        data: address,
+                        version: QrVersions.auto,
+                        size: 200.0,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Color(0xFF0FA71A),
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                      const SizedBox(height: 40),
@@ -154,8 +174,12 @@ class _RecievePageState extends State<RecievePage> {
                               GestureDetector(
                                 onTap: () {
                                   Clipboard.setData(ClipboardData(text: address));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Address copied to clipboard'), duration: Duration(seconds: 1)),
+                                  AppModal.showMessage(
+                                    context: context,
+                                    title: 'Copied',
+                                    message: 'Address copied to clipboard.',
+                                    icon: Icons.check_circle,
+                                    iconColor: const Color(0xFF0FA71A),
                                   );
                                 },
                                 child: Container(

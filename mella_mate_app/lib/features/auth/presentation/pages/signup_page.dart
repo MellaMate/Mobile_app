@@ -1,8 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mella_mate_app/features/auth/presentation/pages/login_page.dart';
 import 'package:mella_mate_app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:mella_mate_app/core/widgets/app_modal.dart';
+import 'package:mella_mate_app/core/validators.dart';
+import 'package:mella_mate_app/features/legal/presentation/pages/privacy_policy_page.dart';
+import 'package:mella_mate_app/features/legal/presentation/pages/terms_of_service_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mella_mate_app/providers/auth_provider.dart';
+
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
@@ -10,10 +16,9 @@ class SignupPage extends StatefulWidget {
   State<SignupPage> createState() => _SignupPageState();
 }
 
-
-
 class _SignupPageState extends State<SignupPage> {
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -23,7 +28,8 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -31,29 +37,100 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
+      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       final success = await authProvider.signup(
-        username: _nameController.text,
-        email: _emailController.text,
+        username: fullName,
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (success) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Account Created Successfully! Please login.'),
-            backgroundColor: _accentGreen,
+
+        AppModal.showDialog(
+          context: context,
+          barrierDismissible: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Check your email!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  children: [
+                    const TextSpan(
+                      text: 'We\'ve sent a secure verification link to\n',
+                    ),
+                    TextSpan(
+                      text: _emailController.text.trim(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text(
+                    'Go to Login',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? 'Signup failed'),
-            backgroundColor: Colors.red,
-          ),
+        AppModal.showMessage(
+          context: context,
+          title: 'Signup failed',
+          message: authProvider.error ?? 'Signup failed',
+          icon: Icons.error_outline,
+          iconColor: Colors.red,
+          actionText: 'Try again',
         );
       }
     }
@@ -95,16 +172,10 @@ class _SignupPageState extends State<SignupPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Logo text
-                      Text(
-                        'MELLAMATE.',
-                        style: TextStyle(
-                          color: _accentGreen,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.8,
-                          fontSize: 20,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.jpg',
+                        height: 64,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 18),
 
@@ -119,13 +190,23 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Name field
+                      // First name field
                       _buildTextField(
-                        controller: _nameController,
-                        label: 'Name',
-                        hint: 'Tanzir Rahman',
+                        controller: _firstNameController,
+                        label: 'First Name',
+                        hint: 'Abebe',
                         focusedColor: _accentGreen,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Please enter your name' : null,
+                        validator: AppValidators.validateName,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Last name field
+                      _buildTextField(
+                        controller: _lastNameController,
+                        label: 'Last Name',
+                        hint: 'Kebede',
+                        focusedColor: _accentGreen,
+                        validator: AppValidators.validateName,
                       ),
                       const SizedBox(height: 14),
 
@@ -133,14 +214,10 @@ class _SignupPageState extends State<SignupPage> {
                       _buildTextField(
                         controller: _emailController,
                         label: 'Email Address',
-                        hint: 'hello@example.com',
+                        hint: 'abebekebede@gmail.com',
                         keyboardType: TextInputType.emailAddress,
                         focusedColor: _accentGreen,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Please enter your email';
-                          if (!v.contains('@')) return 'Please enter a valid email';
-                          return null;
-                        },
+                        validator: AppValidators.validateEmail,
                       ),
                       const SizedBox(height: 14),
 
@@ -151,7 +228,7 @@ class _SignupPageState extends State<SignupPage> {
                         hint: '••••••••••••',
                         isPassword: true,
                         focusedColor: _accentGreen,
-                        validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 chars' : null,
+                        validator: AppValidators.validatePassword,
                       ),
                       const SizedBox(height: 12),
 
@@ -169,7 +246,7 @@ class _SignupPageState extends State<SignupPage> {
                               ),
                               children: [
                                 TextSpan(
-                                  text: 'terms of service',
+                                  text: 'Terms of Service',
                                   style: TextStyle(
                                     color: _accentGreen,
                                     fontSize: 14,
@@ -177,11 +254,27 @@ class _SignupPageState extends State<SignupPage> {
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Terms of Service not implemented yet.')),
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (_) => const TermsOfServicePage()),
                                       );
                                     },
                                 ),
+                                const TextSpan(text: ' and '),
+                                TextSpan(
+                                  text: 'Privacy Policy',
+                                  style: TextStyle(
+                                    color: _accentGreen,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                                      );
+                                    },
+                                ),
+                                const TextSpan(text: '.'),
                               ],
                             ),
                           ),
@@ -208,7 +301,10 @@ class _SignupPageState extends State<SignupPage> {
                                 return const SizedBox(
                                   height: 20,
                                   width: 20,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
                                 );
                               }
                               return const Text(
@@ -216,131 +312,56 @@ class _SignupPageState extends State<SignupPage> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white
+                                  color: Colors.white,
                                 ),
                               );
                             },
                           ),
                         ),
                       ),
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                    // Divider with label
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xFFE6E6E6),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6F7),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'or sign up with',
+                      const SizedBox(height: 8),
+
+                      // Bottom sign in
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account?',
                             style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        const Expanded(
-                          child: Divider(
-                            thickness: 1,
-                            color: Color(0xFFE6E6E6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Google button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Sign-In is not implemented yet.')),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF0F0F0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 12,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.white,
-                              child: Text(
-                                'G',
-                                style: TextStyle(
-                                  color: Colors.red[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                color: Colors.grey[800],
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Bottom sign in
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Already have an account?',
-                          style: TextStyle(color: Colors.grey[700],fontSize: 16),
-                        ),
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).pop(), // Return to Login
-                          child: Text(
-                            'Sign in Here',
-                            style: TextStyle(
-                              color: _accentGreen,
-                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
                               fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
+                            }, // Go to Login
+                            child: Text(
+                              'Sign in Here',
+                              style: TextStyle(
+                                color: _accentGreen,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -388,12 +409,12 @@ class _SignupPageState extends State<SignupPage> {
               borderSide: BorderSide(color: focusedColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
             ),
             focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
             ),
             suffixIcon: isPassword
                 ? IconButton(
